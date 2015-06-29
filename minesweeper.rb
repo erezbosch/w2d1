@@ -6,6 +6,7 @@ require 'io/console'
 class MinesweeperGame
   SAVE_FILE = "minesweeper_save.yml"
   BEST_TIMES = "minesweeper_high_scores"
+  LEVELS = [[9, 9], [12, 20], [16, 40]]
 
   def initialize board_size = 9, num_bombs = board_size
     @board = Board.new(board_size, num_bombs)
@@ -42,10 +43,9 @@ class MinesweeperGame
       high_scores_file = "#{BEST_TIMES + @board_size.to_s}.yml"
 
       unless File.exist?(high_scores_file)
-        f = File.new(high_scores_file, "w")
-        f.puts Array.new(10, 9999).to_yaml
-        f.close
+        self.class.create_scores_file(high_scores_file)
       end
+
 
       high_scores = YAML.load_file(high_scores_file)
 
@@ -82,7 +82,7 @@ class MinesweeperGame
     until move
       clock_start = Time.now
 
-      char = get_char
+      char = self.class.get_char
 
       case char
       when "i"
@@ -111,6 +111,7 @@ class MinesweeperGame
   end
 
   def save_game
+    puts "Game saved."
     f = File.new(SAVE_FILE, "w")
     f.puts self.to_yaml
     f.close
@@ -122,29 +123,70 @@ class MinesweeperGame
 
   def self.determine_play
     MinesweeperGame.new.run_game unless File.exist?(SAVE_FILE)
-    print "Would you like to load your game? (y/n) "
-    if gets.chomp.downcase == "y"
+
+    print "Enter 'l' to load a saved game, 'v' to view high scores, or"
+    print " just press enter to play: "
+    case gets.chomp.downcase
+    when "l"
       MinesweeperGame.play_from_file(SAVE_FILE)
+    when "v"
+      MinesweeperGame.display_leaderboards
+      MinesweeperGame.determine_play
     else
       print "Enter e, m, or h to indicate your preferred difficulty level: "
+
       case gets.chomp.downcase
-      when "e"
-        MinesweeperGame.new.run_game
       when "m"
-        MinesweeperGame.new(12, 20).run_game
+        size, bombs = LEVELS[1]
       when "h"
-        MinesweeperGame.new(16, 40).run_game
+        size, bombs = LEVELS[2]
+      else
+        size, bombs = LEVELS[0]
       end
+      MinesweeperGame.new(size, bombs).run_game
     end
   end
 
-  def get_char
+  def self.get_char
     state = `stty -g`
     `stty raw -echo -icanon isig`
 
     STDIN.getc.chr
   ensure
     `stty #{state}`
+  end
+
+  def self.create_scores_file(file_name)
+    f = File.new(file_name, "w")
+    f.puts Array.new(10, 9999).to_yaml
+    f.close
+  end
+
+  def self.display_leaderboards
+    system "clear"
+
+    LEVELS.each_with_index do |level, idx|
+      high_scores_file = "#{BEST_TIMES + level[0].to_s}.yml"
+
+      unless File.exist?(high_scores_file)
+        MinesweeperGame.create_scores_file(high_scores_file)
+      end
+
+      puts "Best Times (#{MinesweeperGame.level_to_word(idx)})"
+      puts YAML.load_file(high_scores_file)
+      puts
+    end
+  end
+
+  def self.level_to_word level_number
+    case level_number
+    when 0
+      "Easy"
+    when 1
+      "Medium"
+    when 2
+      "Hard"
+    end
   end
 end
 

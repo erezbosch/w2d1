@@ -73,8 +73,8 @@ class Board
 
   def render_with_cursor(cursor)
     system "clear"
-    puts "Press IJKL to move your cursor. "
-    puts "Press the space bar to reveal a square or f to flag it. "
+    puts "Press I, J, K, or L to move your cursor."
+    puts "Press the space bar to reveal a square or F to flag it."
     puts "Press shift-S to save and quit. "
 
     (0...@grid.size).each do |row|
