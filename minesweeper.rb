@@ -5,7 +5,7 @@ require 'io/console'
 
 class MinesweeperGame
   SAVE_FILE = "minesweeper_save.yml"
-  BEST_TIMES = "minesweeper_high_scores.yml"
+  BEST_TIMES = "minesweeper_high_scores"
 
   def initialize board_size = 9, num_bombs = board_size
     @board = Board.new(board_size, num_bombs)
@@ -24,7 +24,7 @@ class MinesweeperGame
 
   def render_board_with_cursor
     @board.render_with_cursor(@cursor)
-    puts "Your time is #{@time_played.to_i.to_s}"
+    puts "Your time is #{@time_played.to_i.to_s} seconds."
   end
 
 
@@ -37,17 +37,28 @@ class MinesweeperGame
     end
 
     if @board.won?
-      puts "You won! Your time was #{@time_played.to_i.to_s}!"
-      high_scores = YAML.load_file(BEST_TIMES)
+      puts "You won! It only took you #{@time_played.to_i.to_s} seconds!"
+
+      high_scores_file = "#{BEST_TIMES + @board_size.to_s}.yml"
+
+      unless File.exist?(high_scores_file)
+        f = File.new(high_scores_file, "w")
+        f.puts Array.new(10, 9999).to_yaml
+        f.close
+      end
+
+      high_scores = YAML.load_file(high_scores_file)
+
       (0..9).each do |score_idx|
         if @time_played.to_i < high_scores[score_idx]
           puts "Your time is the new \##{score_idx + 1} score!"
           break
         end
       end
-      
+
       high_scores = (high_scores << @time_played.to_i).sort[0..9]
-      f = File.new(BEST_TIMES, "w")
+
+      f = File.new(high_scores_file, "w")
       f.puts high_scores.to_yaml
       f.close
     else
@@ -116,7 +127,14 @@ class MinesweeperGame
       MinesweeperGame.play_from_file(SAVE_FILE)
     else
       print "Enter e, m, or h to indicate your preferred difficulty level: "
-      MinesweeperGame.new.run_game
+      case gets.chomp.downcase
+      when "e"
+        MinesweeperGame.new.run_game
+      when "m"
+        MinesweeperGame.new(12, 20).run_game
+      when "h"
+        MinesweeperGame.new(16, 40).run_game
+      end
     end
   end
 

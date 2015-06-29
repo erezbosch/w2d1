@@ -43,9 +43,9 @@ class Tile
       "B".red
     else
       if neighboring_bombs == 0
-        "_"
+        "_".yellow
       else
-        neighboring_bombs.to_s
+        neighboring_bombs.to_s.yellow
       end
     end
   end

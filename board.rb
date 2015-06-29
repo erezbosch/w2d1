@@ -1,3 +1,5 @@
+require 'colorize'
+
 class Board
   attr_reader :grid
 
@@ -77,7 +79,11 @@ class Board
 
     (0...@grid.size).each do |row|
       (0...@grid.size).each do |col|
-        print [row, col] == cursor ? "^ " : "#{self[[row, col]].to_s} "
+        if [row, col] == cursor
+          print "^ ".light_blue
+        else
+          print "#{self[[row, col]].to_s} "
+        end
       end
       puts
     end
