@@ -1,13 +1,17 @@
 require_relative 'tile'
 require_relative 'board'
 require 'yaml'
+require 'io/console'
 
 class MinesweeperGame
   SAVE_FILE = "minesweeper_save.yml"
+  BEST_TIMES = "minesweeper_high_scores.yml"
 
   def initialize board_size = 9, num_bombs = board_size
     @board = Board.new(board_size, num_bombs)
+    @board_size = board_size
     @time_played = 0
+    @cursor = [board_size / 2, board_size / 2]
   end
 
   def reveal pos
@@ -18,40 +22,69 @@ class MinesweeperGame
     @board[pos].flag
   end
 
+  def render_board_with_cursor
+    @board.render_with_cursor(@cursor)
+    puts "Your time is #{@time_played.to_i.to_s}"
+  end
+
+
   def run_game
-    @board.render
+    render_board_with_cursor
+
     until @board.over?
-      if prompt_to_save
-        save_game
-        return
-      end
-      play_turn
+      turn = play_turn
+      return unless turn
     end
+
     if @board.won?
-      puts "You won! Your time is #{@time_played}!"
+      puts "You won! Your time was #{@time_played.to_i.to_s}!"
     else
       puts "You lost!"
     end
   end
 
   def play_turn
-    clock_start = Time.now
-    pos, action = get_move
+    move = get_move
+    return false unless move
+
+    pos, action = move
     action == "f" ? flag(pos) : reveal(pos)
-    @time_played += Time.now - clock_start
-    @board.render
-    puts "Your time...#{@time_played.to_i}\n"
+    render_board_with_cursor
+    true
   end
 
   def get_move
-    print "Enter your move, e.g., f,4,5 to flag position (4, 5): "
-    move = gets.chomp.split(",")
-    [move[1..2].map(&:to_i), move[0]]
-  end
+    move = nil
 
-  def prompt_to_save
-    print "Save and quit? (y/n) "
-    gets.chomp.downcase == "y"
+    until move
+      clock_start = Time.now
+
+      char = get_char
+
+      case char
+      when "i"
+        @cursor[0] -= 1 unless @cursor[0] < 1
+      when "j"
+        @cursor[1] -= 1 unless @cursor[1] < 1
+      when "k"
+        @cursor[0] += 1 unless @cursor[0] > @board_size - 2
+      when "l"
+        @cursor[1] += 1 unless @cursor[1] > @board_size - 2
+      when " "
+        move = [@cursor, "r"]
+      when "f"
+        move = [@cursor, "f"]
+      when "S"
+        save_game
+        return false
+      end
+
+      @time_played += Time.now - clock_start
+
+      render_board_with_cursor
+    end
+
+    move
   end
 
   def save_game
@@ -70,8 +103,18 @@ class MinesweeperGame
     if gets.chomp.downcase == "y"
       MinesweeperGame.play_from_file(SAVE_FILE)
     else
+      print "Enter e, m, or h to indicate your preferred difficulty level: "
       MinesweeperGame.new.run_game
     end
+  end
+
+  def get_char
+    state = `stty -g`
+    `stty raw -echo -icanon isig`
+
+    STDIN.getc.chr
+  ensure
+    `stty #{state}`
   end
 end
 

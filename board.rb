@@ -55,11 +55,6 @@ class Board
     end
   end
 
-  def render
-    puts "  #{(0..@grid.size - 1).to_a.join(" ")}"
-    @grid.each_with_index { |row, idx| puts "#{idx} #{row.join(" ")}" }
-  end
-
   def bomb_revealed?
     @grid.flatten.any? { |el| el.bomb_revealed? }
   end
@@ -71,6 +66,20 @@ class Board
   def won?
     @grid.flatten.all? do |el|
       (el.is_bomb && el.flagged) || (!el.is_bomb && el.revealed)
+    end
+  end
+
+  def render_with_cursor(cursor)
+    system "clear"
+    puts "Press IJKL to move your cursor. "
+    puts "Press the space bar to reveal a square or f to flag it. "
+    puts "Press shift-S to save and quit. "
+
+    (0...@grid.size).each do |row|
+      (0...@grid.size).each do |col|
+        print [row, col] == cursor ? "^ " : "#{self[[row, col]].to_s} "
+      end
+      puts
     end
   end
 end
