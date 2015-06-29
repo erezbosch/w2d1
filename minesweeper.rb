@@ -38,6 +38,18 @@ class MinesweeperGame
 
     if @board.won?
       puts "You won! Your time was #{@time_played.to_i.to_s}!"
+      high_scores = YAML.load_file(BEST_TIMES)
+      (0..9).each do |score_idx|
+        if @time_played.to_i < high_scores[score_idx]
+          puts "Your time is the new \##{score_idx + 1} score!"
+          break
+        end
+      end
+      
+      high_scores = (high_scores << @time_played.to_i).sort[0..9]
+      f = File.new(BEST_TIMES, "w")
+      f.puts high_scores.to_yaml
+      f.close
     else
       puts "You lost!"
     end
