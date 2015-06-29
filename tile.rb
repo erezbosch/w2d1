@@ -1,5 +1,7 @@
+require 'colorize'
+
 class Tile
-  attr_reader :is_bomb
+  attr_reader :is_bomb, :neighbors, :flagged, :revealed
 
   def initialize is_bomb = false
     @is_bomb = is_bomb
@@ -9,7 +11,7 @@ class Tile
   end
 
   def flag
-    @flagged = !@flagged
+    @flagged = !@flagged unless @revealed
   end
 
   def add_neighbor neighbor
@@ -17,16 +19,28 @@ class Tile
   end
 
   def neighboring_bombs
-    @neighbors.inject(0) { |bombs, el| bombs + 1 if el.is_bomb }
+    @neighbors.inject(0) { |bombs, el| el.is_bomb ? bombs + 1 : bombs}
+  end
+
+  def reveal
+    unless @revealed
+      @revealed = true
+      if neighboring_bombs == 0 && !@is_bomb
+        @neighbors.each do |neighbor|
+          neighbor.flag if neighbor.flagged
+          neighbor.reveal
+        end
+      end
+    end
   end
 
   def to_s
     if @flagged
-      "F"
+      "F".green
     elsif !@revealed
       "*"
     elsif @is_bomb
-      "B"
+      "B".red
     else
       if neighboring_bombs == 0
         "_"
@@ -34,5 +48,13 @@ class Tile
         neighboring_bombs.to_s
       end
     end
+  end
+
+  def bomb_revealed?
+    @is_bomb && @revealed
+  end
+
+  def plant_bomb
+    @is_bomb = true
   end
 end

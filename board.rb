@@ -13,17 +13,19 @@ class Board
   ]
 
   def initialize size = 9, num_bombs = size
-    @grid = Array.new(size) { Array.new(size) }
+    @grid = Array.new(size) { Array.new(size) { Tile.new } }
     populate(num_bombs)
+    link_neighbors
   end
 
   def populate num_bombs
-    tiles = []
-    num_bombs.times { tiles << Tile.new(true)}
-    (@grid.flatten.size - num_bombs).times {tiles << Tile.new }
-    tiles.shuffle!
-    @grid.map! do |grid_row|
-      grid_row.map! { tiles.shift }
+    bombs_planted = 0
+    until bombs_planted == num_bombs
+      pos = [rand(@grid.size), rand(@grid.size)]
+      unless self[pos].is_bomb
+        self[pos].plant_bomb
+        bombs_planted += 1
+      end
     end
   end
 
@@ -32,25 +34,43 @@ class Board
     @grid[row][col]
   end
 
-  def []= pos, mark
-    row, col = pos
-    @grid[row][col] = mark
-  end
-
   def link_neighbors
     @grid.each_with_index do |grid_row, grid_row_idx|
       grid_row.each_index do |grid_col_idx|
-
+        add_neighbors([grid_row_idx, grid_col_idx])
       end
     end
-
   end
 
-  def add_neighbors row, col
+  def add_neighbors pos
+    row, col = pos
     adjacents = ADJACENT_POSITIONS.map do |adj_pos|
       [row + adj_pos[0], col + adj_pos[1]]
-    end.select {|adj_pos| adj_pos.all? { |el| el.between?(0, @grid.size - 1) } }
+    end
+    adjacents = adjacents.select do |adj_pos|
+      adj_pos.all? { |el| el.between?(0, @grid.size - 1) }
+    end
+    adjacents.each do |adj_pos|
+      self[pos].add_neighbor(self[adj_pos])
+    end
+  end
 
+  def render
+    puts "  #{(0..@grid.size - 1).to_a.join(" ")}"
+    @grid.each_with_index { |row, idx| puts "#{idx} #{row.join(" ")}" }
+  end
 
+  def bomb_revealed?
+    @grid.flatten.any? { |el| el.bomb_revealed? }
+  end
+
+  def over?
+    won? || bomb_revealed?
+  end
+
+  def won?
+    @grid.flatten.all? do |el|
+      (el.is_bomb && el.flagged) || (!el.is_bomb && el.revealed)
+    end
   end
 end
