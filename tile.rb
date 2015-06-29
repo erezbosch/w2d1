@@ -36,17 +36,13 @@ class Tile
 
   def to_s
     if @flagged
-      "F".green
+      "⚑".green
     elsif !@revealed
       "*"
     elsif @is_bomb
       "B".red
     else
-      if neighboring_bombs == 0
-        "_".yellow
-      else
-        neighboring_bombs.to_s.yellow
-      end
+      neighboring_bombs == 0 ? "_".yellow : neighboring_bombs.to_s.yellow
     end
   end
 
