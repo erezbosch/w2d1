@@ -15,20 +15,6 @@ class MinesweeperGame
     @cursor = [board_size / 2, board_size / 2]
   end
 
-  def reveal pos
-    @board[pos].flagged ? @board[pos].flag : @board[pos].reveal
-  end
-
-  def flag pos
-    @board[pos].flag
-  end
-
-  def render_board show_cursor = true
-    @board.render(@cursor, show_cursor)
-    puts "Your time is #{@time_played.to_i.to_s} seconds."
-  end
-
-
   def run_game
     render_board
 
@@ -45,6 +31,59 @@ class MinesweeperGame
       puts "You lost!"
     end
   end
+
+  def self.play_from_file file_name = SAVE_FILE
+    YAML.load_file(file_name).run_game
+  end
+
+  def self.determine_play
+    MinesweeperGame.new.run_game unless File.exist?(SAVE_FILE)
+
+    print "Enter 'l' to load a saved game, 'v' to view high scores, or"
+    print " just press enter to play: "
+    case gets.chomp.downcase
+    when "l"
+      MinesweeperGame.play_from_file(SAVE_FILE)
+    when "v"
+      MinesweeperGame.display_leaderboards
+      MinesweeperGame.determine_play
+    else
+      print "Enter e, m, or h to indicate your preferred difficulty level: "
+
+      case gets.chomp.downcase
+      when "m"
+        size, bombs = LEVELS[1]
+      when "h"
+        size, bombs = LEVELS[2]
+      else
+        size, bombs = LEVELS[0]
+      end
+      MinesweeperGame.new(size, bombs).run_game
+    end
+  end
+
+
+  def render_board show_cursor = true
+    @board.render(@cursor, show_cursor)
+    puts "Your time is #{@time_played.to_i.to_s} seconds."
+  end
+
+  def reveal pos
+    @board[pos].flagged ? @board[pos].flag : @board[pos].reveal
+  end
+
+  def flag pos
+    @board[pos].flag
+  end
+
+  def save_game
+    puts "Game saved."
+    f = File.new(SAVE_FILE, "w")
+    f.puts self.to_yaml
+    f.close
+  end
+
+  private
 
   def play_turn
     move = get_move
@@ -90,13 +129,6 @@ class MinesweeperGame
     move
   end
 
-  def save_game
-    puts "Game saved."
-    f = File.new(SAVE_FILE, "w")
-    f.puts self.to_yaml
-    f.close
-  end
-
   def actions_on_win
     puts "You won! It only took you #{@time_played.to_i.to_s} seconds!"
 
@@ -108,7 +140,7 @@ class MinesweeperGame
 
     high_scores = YAML.load_file(high_scores_file)
 
-    (0..9).each do |score_idx|
+    10.times do |score_idx|
       if @time_played.to_i < high_scores[score_idx]
         puts "Your time is the new \##{score_idx + 1} score!"
         break
@@ -121,38 +153,6 @@ class MinesweeperGame
     f.puts high_scores.to_yaml
     f.close
   end
-
-  def self.play_from_file file_name = SAVE_FILE
-    YAML.load_file(file_name).run_game
-  end
-
-  def self.determine_play
-    MinesweeperGame.new.run_game unless File.exist?(SAVE_FILE)
-
-    print "Enter 'l' to load a saved game, 'v' to view high scores, or"
-    print " just press enter to play: "
-    case gets.chomp.downcase
-    when "l"
-      MinesweeperGame.play_from_file(SAVE_FILE)
-    when "v"
-      MinesweeperGame.display_leaderboards
-      MinesweeperGame.determine_play
-    else
-      print "Enter e, m, or h to indicate your preferred difficulty level: "
-
-      case gets.chomp.downcase
-      when "m"
-        size, bombs = LEVELS[1]
-      when "h"
-        size, bombs = LEVELS[2]
-      else
-        size, bombs = LEVELS[0]
-      end
-      MinesweeperGame.new(size, bombs).run_game
-    end
-  end
-
-  private
 
   def self.get_char
     state = `stty -g`
