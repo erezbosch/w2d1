@@ -40,7 +40,7 @@ class Tile
     elsif !@revealed
       "*"
     elsif @is_bomb
-      "B".red
+      "☹".red
     else
       neighboring_bombs == 0 ? "_".yellow : neighboring_bombs.to_s.yellow
     end

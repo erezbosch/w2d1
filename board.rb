@@ -71,7 +71,7 @@ class Board
     end
   end
 
-  def render_with_cursor(cursor)
+  def render(cursor, show_cursor = true)
     system "clear"
     puts "Press I, J, K, or L to move your cursor."
     puts "Press the space bar to reveal a square or F to flag it."
@@ -79,8 +79,8 @@ class Board
 
     (0...@grid.size).each do |row|
       (0...@grid.size).each do |col|
-        if [row, col] == cursor
-          print "^ ".light_blue
+        if [row, col] == cursor && show_cursor
+          print self[[row, col]].to_s.on_blue + " "
         else
           print "#{self[[row, col]].to_s} "
         end
